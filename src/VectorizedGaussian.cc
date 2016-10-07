@@ -34,8 +34,8 @@ VectorizedGaussian::VectorizedGaussian(const RooGaussian &gaus, const RooAbsData
 
 void VectorizedGaussian::fill(std::vector<Double_t> &out) const {
     // calculate normalizatio integral
-    constexpr Double_t root2 = std::sqrt(2.) ;
-    constexpr Double_t rootPiBy2 = std::sqrt(M_PI/2.0);
+    Double_t root2 = std::sqrt(2.) ;
+    Double_t rootPiBy2 = std::sqrt(M_PI/2.0);
     Double_t xscale = root2*sigma_->getVal();
     Double_t mean = mean_->getVal();
     Double_t norm = rootPiBy2*sigma_->getVal()*(RooMath::erf((x_->getMax()-mean)/xscale)-RooMath::erf((x_->getMin()-mean)/xscale));

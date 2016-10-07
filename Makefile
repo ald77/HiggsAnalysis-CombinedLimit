@@ -27,14 +27,19 @@ VDT   = /afs/cern.ch/cms/slc6_amd64_gcc481/cms/vdt/v0.3.2-cms
 # Compiler and flags -----------------------------------------------------------
 CC = g++
 
+EXTERNAL_OPTS_BEGIN =
+EXTERNAL_OPTS_END =
+EXTERNAL_LIBS_BEGIN =
+EXTERNAL_LIBS_END =
+
 ROOTCFLAGS = $(shell root-config --cflags)
 ROOTLIBS = $(shell root-config --libs --glibs)
 ROOTINC = $(shell root-config --incdir)
 
-CCFLAGS = -D STANDALONE $(ROOTCFLAGS) -I$(BOOST)/include -I$(VDT)/include -g -fPIC
+CCFLAGS = $(EXTERNAL_OPTS_BEGIN) -D STANDALONE $(ROOTCFLAGS) -I$(BOOST)/include -I$(VDT)/include -g -fPIC
 # CMSSW CXXFLAGS plus -Wno-unused-local-typedefs (otherwise we get a flood of messages from BOOST) plus -Wno-unused-function
-CCFLAGS += -O2 -pedantic -pthread -pipe -Wno-vla -Werror=overflow -Wstrict-overflow -std=c++0x -msse3 -ftree-vectorize -Wno-strict-overflow -Werror=array-bounds -Werror=format-contains-nul -Werror=type-limits -fvisibility-inlines-hidden -fno-math-errno --param vect-max-version-for-alias-checks=50 -fipa-pta -felide-constructors -fmessage-length=0 -ftemplate-depth-300 -Wall -Wno-non-template-friend -Wno-long-long -Wreturn-type -Wunused -Wparentheses -Wno-deprecated -Werror=return-type -Werror=missing-braces -Werror=unused-value -Werror=address -Werror=format -Werror=sign-compare -Werror=write-strings -Werror=delete-non-virtual-dtor -Werror=maybe-uninitialized -Werror=strict-aliasing -Werror=narrowing -Werror=uninitialized -Werror=unused-but-set-variable -Werror=reorder -Werror=unused-variable -Werror=conversion-null -Werror=switch -fdiagnostics-show-option -DBOOST_DISABLE_ASSERTS -Wno-unused-local-typedefs -Wno-unused-function
-LIBS = $(ROOTLIBS) -L$(BOOST)/lib -L$(VDT)/lib -l RooFit -lRooFitCore -l RooStats -l Minuit -l Foam -lHistFactory -lboost_filesystem -lboost_program_options -lboost_system -lvdt
+CCFLAGS += -O2 -pedantic -pthread -pipe -Wno-vla -Werror=overflow -Wstrict-overflow -std=c++0x -msse3 -ftree-vectorize -Wno-strict-overflow -Werror=array-bounds -Werror=format-contains-nul -Werror=type-limits -fvisibility-inlines-hidden -fno-math-errno --param vect-max-version-for-alias-checks=50 -felide-constructors -fmessage-length=0 -ftemplate-depth-300 -Wall -Wno-non-template-friend -Wno-long-long -Wreturn-type -Wunused -Wparentheses -Wno-deprecated -Werror=return-type -Werror=missing-braces -Werror=unused-value -Werror=address -Werror=format -Werror=sign-compare -Werror=write-strings -Werror=delete-non-virtual-dtor -Werror=maybe-uninitialized -Werror=strict-aliasing -Werror=narrowing -Werror=uninitialized -Werror=unused-but-set-variable -Werror=reorder -Werror=unused-variable -Werror=conversion-null -Werror=switch -fdiagnostics-show-option -DBOOST_DISABLE_ASSERTS -Wno-unused-local-typedefs -Wno-unused-function $(EXTERNAL_OPTS_END)
+LIBS = $(EXTERNAL_LIBS_BEGIN) $(ROOTLIBS) -L$(BOOST)/lib -L$(VDT)/lib -l RooFit -lRooFitCore -l RooStats -l Minuit -l Foam -lHistFactory -lboost_filesystem -lboost_program_options -lboost_system -lvdt $(EXTERNAL_LIBS_END)
 
 # Library name -----------------------------------------------------------------
 LIBNAME=HiggsAnalysisCombinedLimit
@@ -86,7 +91,7 @@ dirs:
 	@mkdir -p $(LIB_DIR)
 	@mkdir -p $(EXE_DIR)
 	@mkdir -p $(LIB_DIR)/python/HiggsAnalysis
-	@ln -sd ../../../python $(LIB_DIR)/python/HiggsAnalysis/CombinedLimit || /bin/true
+	@ln -s ../../../python $(LIB_DIR)/python/HiggsAnalysis/CombinedLimit || echo "Proceeding without (re-)making links..."
 	@touch $(LIB_DIR)/python/__init__.py
 	@touch $(LIB_DIR)/python/HiggsAnalysis/__init__.py
 	@touch $(LIB_DIR)/python/HiggsAnalysis/CombinedLimit/__init__.py

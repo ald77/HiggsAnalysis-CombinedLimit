@@ -287,7 +287,8 @@ int MarkovChainMC::runOnce(RooWorkspace *w, RooStats::ModelConfig *mc_s, RooStat
   mc.SetProposalFunction(debugProposal_ > 0 ? *pdfDebugProp : *pdfProp);
   mc.SetLeftSideTailFraction(0);
 
-  if (typeid(*mc_s->GetPriorPdf()) == typeid(RooUniform)) {
+  RooAbsPdf *mc_s_prior_pdf = mc_s->GetPriorPdf();
+  if (typeid(*mc_s_prior_pdf) == typeid(RooUniform)) {
     mc.SetPriorPdf(*((RooAbsPdf *)0));
   }
 

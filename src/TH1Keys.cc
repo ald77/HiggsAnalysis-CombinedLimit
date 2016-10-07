@@ -175,6 +175,6 @@ void TH1Keys::FillH1() const
 }
 
 void TH1Keys::dont(const char *msg) const {
-    TObject::Error("TH1Keys",msg);
+    TObject::Error((std::string("TH1Keys: ")+msg).c_str(),"");
     throw std::runtime_error(std::string("Error in TH1Keys: ")+msg);
 }
