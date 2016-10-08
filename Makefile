@@ -48,7 +48,7 @@ SONAME=lib$(LIBNAME).so
 # Linker and flags -------------------------------------------------------------
 LD = g++
 ROOTLDFLAGS   = $(shell root-config --ldflags)
-LDFLAGS       = $(ROOTLDFLAGS) -rdynamic -shared -Wl,-soname,$(SONAME) -fPIC
+LDFLAGS       = $(ROOTLDFLAGS) -rdynamic -shared -fPIC
 
 # Dictionaries filename --------------------------------------------------------
 DICTNAME=cintdictionary
@@ -91,7 +91,7 @@ dirs:
 	@mkdir -p $(LIB_DIR)
 	@mkdir -p $(EXE_DIR)
 	@mkdir -p $(LIB_DIR)/python/HiggsAnalysis
-	@ln -s ../../../python $(LIB_DIR)/python/HiggsAnalysis/CombinedLimit || echo "Proceeding without (re-)making links..."
+	@ln -sn ../../../python $(LIB_DIR)/python/HiggsAnalysis/CombinedLimit || echo "Proceeding without (re-)making links..."
 	@touch $(LIB_DIR)/python/__init__.py
 	@touch $(LIB_DIR)/python/HiggsAnalysis/__init__.py
 	@touch $(LIB_DIR)/python/HiggsAnalysis/CombinedLimit/__init__.py
@@ -101,8 +101,10 @@ dirs:
 dict: dirs $(SRC_DIR)/$(DICTNAME).cc
 $(SRC_DIR)/$(DICTNAME).cc : $(SRC_DIR)/CombinedLimit_LinkDef.h 
 # 	@echo "\n*** Generating dictionaries ..."
-	rootcint -f $(SRC_DIR)/$(DICTNAME).cc -c -p -I$(INC_DIR) -I$(SRC_DIR) -I$(ROOTINC) $(DICTHDRS) $(SRC_DIR)/CombinedLimit_LinkDef.h
-	mv $(SRC_DIR)/$(DICTNAME).h $(INC_DIR)/$(DICTNAME).h 
+	rootcint -f $(SRC_DIR)/$(DICTNAME).cc -c -p -I$(INC_DIR) -I$(SRC_DIR) -I$(ROOTINC) -I$(shell pwd)/../.. $(DICTHDRS) $(SRC_DIR)/CombinedLimit_LinkDef.h
+	-mv $(SRC_DIR)/$(DICTNAME).h $(INC_DIR)/$(DICTNAME).h
+$(SRC_DIR)/CombinedLimit_LinkDef.h: $(SRC_DIR)/classes.h $(SRC_DIR)/classes_def.xml
+	./rebuild_linkdef.py
 
 #---------------------------------------
 
@@ -118,6 +120,8 @@ $(OBJ_DIR)/%.o : $(SRC_DIR)/%.cxx $(INC_DIR)/%.h
 # this has no header
 $(OBJ_DIR)/tdrstyle.o: $(SRC_DIR)/tdrstyle.cc
 	$(CC) $(CCFLAGS) -I $(INC_DIR) -c $< -o $@
+$(OBJ_DIR)/$(DICTNAME).o: $(SRC_DIR)/$(DICTNAME).cc
+	$(CC) $(CCFLAGS) -I $(INC_DIR) -c $< -o $@
 
 #---------------------------------------
 
@@ -130,7 +134,7 @@ ${LIB_DIR}/$(SONAME):$(addprefix $(OBJ_DIR)/,$(OBJS))
 
 exe: $(addprefix $(EXE_DIR)/,$(EXES))
 # 	@echo "\n*** Compiling executables ..."
-$(addprefix $(EXE_DIR)/,$(EXES)) : $(addprefix $(PROG_DIR)/,$(PROGS))
+$(addprefix $(EXE_DIR)/,$(EXES)) : $(addprefix $(PROG_DIR)/,$(PROGS)) $(LIB_DIR)/$(SONAME)
 	$(CC) $< -o $@ $(CCFLAGS) -L $(LIB_DIR) -l $(LIBNAME) -I $(INC_DIR) $(BOOST_INC) $(LIBS)
 
 

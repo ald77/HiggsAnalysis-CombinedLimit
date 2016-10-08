@@ -1,0 +1,9 @@
+*~
+
+exe
+lib
+obj
+
+src/CombinedLimit_LinkDef.h
+src/cintdictionary.cc
+src/cintdictionary_rdict.pcm
