@@ -1,3 +1,5 @@
+from __future__ import print_function 
+
 import ROOT
 import re, os, os.path
 from sys import stderr, stdout
@@ -24,7 +26,7 @@ class ModelBuilderBase():
     def __init__(self,options):
         self.options = options
         self.out = stdout
-	self.discrete_param_set = []
+        self.discrete_param_set = []
         if options.bin:
             if options.out == None: options.out = re.sub(".txt$","",options.fileName)+".root"
             options.baseDir = os.path.dirname(options.fileName)
@@ -38,7 +40,7 @@ class ModelBuilderBase():
                 ROOT.RooMsgService.instance().setGlobalKillBelow(ROOT.RooFit.ERROR)
             elif options.verbose < 3:
                 ROOT.RooMsgService.instance().setGlobalKillBelow(ROOT.RooFit.WARNING)
-            if os.environ.has_key('ROOFITSYS'):
+            if 'ROOFITSYS' in os.environ:
                 ROOT.gSystem.AddIncludePath(" -I%s/include " % os.environ['ROOFITSYS'])
         elif options.out != None:
             #stderr.write("Will save workspace to HLF file %s" % options.out)
@@ -50,18 +52,18 @@ class ModelBuilderBase():
             ROOFIT_EXPR = "cexpr"            
     def factory_(self,X):
         if self.options.verbose >= 7:
-            print "RooWorkspace::factory('%s')" % X
+            print("RooWorkspace::factory('%s')" % X)
         if (len(X) > 1000):
-            print "Executing factory with a string of length ",len(X)," > 1000, could trigger a bug: ",X
+            print("Executing factory with a string of length ",len(X)," > 1000, could trigger a bug: ",X)
         ret = self.out.factory(X);
         if ret: 
-            if self.options.verbose >= 7: print " ---> ",ret
+            if self.options.verbose >= 7: print(" ---> ",ret)
             self.out.dont_delete.append(ret)
             return ret
         else:
-            print "ERROR parsing '%s'" % X
+            print("ERROR parsing '%s'" % X)
             self.out.Print("V");
-            raise RuntimeError, "Error in factory statement" 
+            raise RuntimeError("Error in factory statement" )
     def doComment(self,X):
         if not self.options.bin: self.out.write("// "+X+"\n");
     def doVar(self,vardef):
@@ -78,7 +80,7 @@ class ModelBuilderBase():
         if self.options.bin: return self.factory_("%s::%s(%s)" % (type, name, X));
         else: self.out.write("%s = %s(%s);\n" % (name, type, X))
     def addDiscrete(self,var):
-	self.discrete_param_set.append(var)
+        self.discrete_param_set.append(var)
 
 class ModelBuilder(ModelBuilderBase):
     """This class defines the actual methods to build a model"""
@@ -102,20 +104,20 @@ class ModelBuilder(ModelBuilderBase):
 
         self.physics.preProcessNuisances(self.DC.systs)
         self.doNuisances()
-	self.doExtArgs()
-	self.doRateParams()
+        self.doExtArgs()
+        self.doRateParams()
         self.doExpectedEvents()
         self.doIndividualModels()
         self.doNuisancesGroups() # this needs to be called after both doNuisances and doIndividualModels
         self.doCombination()
-	self.runPostProcesses()
+        self.runPostProcesses()
         self.physics.done()
         if self.options.bin:
             self.doModelConfigs()
             if self.options.verbose > 1: self.out.Print("tv")
             if self.options.verbose > 2: 
                 self.out.pdf("model_s").graphVizTree(self.options.out+".dot", "\\n")
-                print "Wrote GraphVizTree of model_s to ",self.options.out+".dot"
+                print("Wrote GraphVizTree of model_s to ",self.options.out+".dot")
 
 
     def runPostProcesses(self):
@@ -123,105 +125,105 @@ class ModelBuilder(ModelBuilderBase):
          self.out.arg(n).setConstant(True)
 
     def doExtArgs(self):
-	open_files = {};
-	for rp in self.DC.extArgs.keys():
-	  if self.out.arg(rp): continue
-	  argv = self.DC.extArgs[rp][-1]
-	  if ":" in argv:
-	    fin,wsn = argv.split(":")
-	    if (fin,wsn) in open_files: 
-		  wstmp = open_files[(fin,wsn)]
-		  if not wstmp.arg(rp): 
-		   raise RuntimeError, "No parameter '%s' found for extArg in workspace %s from file %s"%(rp,wsn,fin)
-		  self.out._import(wstmp.arg(rp))
-	    else:
-	      try:
-		fitmp = ROOT.TFile.Open(fin)
-		wstmp = fitmp.Get(wsn)
-		if not wstmp.arg(rp): 
-		 raise RuntimeError, "No parameter '%s' found for extArg in workspace %s from file %s"%(rp,wsn,fin)
-		self.out._import(wstmp.arg(rp))
-		open_files[(fin,wsn)] = wstmp
-	      except: 
-		raise RuntimeError, "No File '%s' found for extArg, or workspace '%s' not in file "%(fin,wsn)
-	  else:
-	      param_range = ""
-	      param_val   = self.DC.extArgs[rp][-1]
-	      if len(self.DC.extArgs[rp])>3: # range is included: 
-	        param_range = self.DC.extArgs[rp][-1]
-	        param_val   = self.DC.extArgs[rp][-2]
-	    	if "[" not in param_range: 
-			  raise RuntimeError, "Expected range arguments [min,max] for extArg %s "%(rp)
-	  	param_range = param_range.strip('[]')
-	      
-	      removeRange = False
-	      if param_range == "": 
-	      	param_range = "0,1" 
-		removeRange=True
+        open_files = {};
+        for rp in self.DC.extArgs.keys():
+          if self.out.arg(rp): continue
+          argv = self.DC.extArgs[rp][-1]
+          if ":" in argv:
+            fin,wsn = argv.split(":")
+            if (fin,wsn) in open_files: 
+                  wstmp = open_files[(fin,wsn)]
+                  if not wstmp.arg(rp): 
+                   raise RuntimeError("No parameter '%s' found for extArg in workspace %s from file %s"%(rp,wsn,fin))
+                  self.out._import(wstmp.arg(rp))
+            else:
+              try:
+                fitmp = ROOT.TFile.Open(fin)
+                wstmp = fitmp.Get(wsn)
+                if not wstmp.arg(rp): 
+                 raise RuntimeError("No parameter '%s' found for extArg in workspace %s from file %s"%(rp,wsn,fin))
+                self.out._import(wstmp.arg(rp))
+                open_files[(fin,wsn)] = wstmp
+              except: 
+                raise RuntimeError("No File '%s' found for extArg, or workspace '%s' not in file "%(fin,wsn))
+          else:
+              param_range = ""
+              param_val   = self.DC.extArgs[rp][-1]
+              if len(self.DC.extArgs[rp])>3: # range is included: 
+                param_range = self.DC.extArgs[rp][-1]
+                param_val   = self.DC.extArgs[rp][-2]
+                if "[" not in param_range: 
+                          raise RuntimeError("Expected range arguments [min,max] for extArg %s "%(rp))
+                param_range = param_range.strip('[]')
+              
+              removeRange = False
+              if param_range == "": 
+                param_range = "0,1" 
+                removeRange=True
 
-	      self.doVar("%s[%s,%s]"%(rp,float(param_val),param_range))
-	      if removeRange: self.out.var(rp).removeRange()
-	      self.out.var(rp).setConstant(False)
-	      self.out.var(rp).setAttribute("flatParam")
-	  	
+              self.doVar("%s[%s,%s]"%(rp,float(param_val),param_range))
+              if removeRange: self.out.var(rp).removeRange()
+              self.out.var(rp).setConstant(False)
+              self.out.var(rp).setAttribute("flatParam")
+                
     def doRateParams(self):
 
-    	# First support external functions/parameters
-	# keep a map of open files/workspaces 
-	open_files = {};
+        # First support external functions/parameters
+        # keep a map of open files/workspaces 
+        open_files = {};
 
-	for rp in self.DC.rateParams.keys():
-	 for rk in range(len(self.DC.rateParams[rp])):
-	  type = self.DC.rateParams[rp][rk][0][-1]
-	  if type!=2: continue
-	  argu,argv = self.DC.rateParams[rp][rk][0][0],self.DC.rateParams[rp][rk][0][1]
-	  if self.out.arg(argu): continue
-	  fin,wsn = argv.split(":")
-	  if (fin,wsn) in open_files: 
-	        wstmp = open_files[(fin,wsn)]
-	        if not wstmp.arg(argu): 
-	         raise RuntimeError, "No parameter '%s' found for rateParam in workspace %s from file %s"%(argu,wsn,fin)
-	        self.out._import(wstmp.arg(argu))
-	  else:
-	    try:
-	      fitmp = ROOT.TFile.Open(fin)
-	      wstmp = fitmp.Get(wsn)
-	      if not wstmp.arg(argu): 
-	       raise RuntimeError, "No parameter '%s' found for rateParam in workspace %s from file %s"%(argu,wsn,fin)
-	      self.out._import(wstmp.arg(argu))
-	      open_files[(fin,wsn)] = wstmp
-	      #fitmp.Close()
-	    except: 
-	      raise RuntimeError, "No File '%s' found for rateParam, or workspace '%s' not in file "%(fin,wsn)
+        for rp in self.DC.rateParams.keys():
+         for rk in range(len(self.DC.rateParams[rp])):
+          type = self.DC.rateParams[rp][rk][0][-1]
+          if type!=2: continue
+          argu,argv = self.DC.rateParams[rp][rk][0][0],self.DC.rateParams[rp][rk][0][1]
+          if self.out.arg(argu): continue
+          fin,wsn = argv.split(":")
+          if (fin,wsn) in open_files: 
+                wstmp = open_files[(fin,wsn)]
+                if not wstmp.arg(argu): 
+                 raise RuntimeError("No parameter '%s' found for rateParam in workspace %s from file %s"%(argu,wsn,fin))
+                self.out._import(wstmp.arg(argu))
+          else:
+            try:
+              fitmp = ROOT.TFile.Open(fin)
+              wstmp = fitmp.Get(wsn)
+              if not wstmp.arg(argu): 
+               raise RuntimeError("No parameter '%s' found for rateParam in workspace %s from file %s"%(argu,wsn,fin))
+              self.out._import(wstmp.arg(argu))
+              open_files[(fin,wsn)] = wstmp
+              #fitmp.Close()
+            except: 
+              raise RuntimeError("No File '%s' found for rateParam, or workspace '%s' not in file "%(fin,wsn))
 
-	# First do independant parameters, then expressions
-	for rp in self.DC.rateParams.keys():
-	 for rk in range(len(self.DC.rateParams[rp])):
-	  type = self.DC.rateParams[rp][rk][0][-1]
-	  if type!=0: continue
-	  param_range = (self.DC.rateParams[rp][rk][1]).strip('[]')
-	  argu,argv = self.DC.rateParams[rp][rk][0][0],self.DC.rateParams[rp][rk][0][1]
-	  if self.out.arg(argu): continue
+        # First do independant parameters, then expressions
+        for rp in self.DC.rateParams.keys():
+         for rk in range(len(self.DC.rateParams[rp])):
+          type = self.DC.rateParams[rp][rk][0][-1]
+          if type!=0: continue
+          param_range = (self.DC.rateParams[rp][rk][1]).strip('[]')
+          argu,argv = self.DC.rateParams[rp][rk][0][0],self.DC.rateParams[rp][rk][0][1]
+          if self.out.arg(argu): continue
 
-	  removeRange = (len(param_range)==0)
-	  if param_range == "": param_range = "0,1" 
-	  self.doVar("%s[%s,%s]"%(argu,argv,param_range))
-	  if removeRange: self.out.var(argu).removeRange()
-	  self.out.var(argu).setConstant(False)
-	  self.out.var(argu).setAttribute("flatParam")
+          removeRange = (len(param_range)==0)
+          if param_range == "": param_range = "0,1" 
+          self.doVar("%s[%s,%s]"%(argu,argv,param_range))
+          if removeRange: self.out.var(argu).removeRange()
+          self.out.var(argu).setConstant(False)
+          self.out.var(argu).setAttribute("flatParam")
 
-	for rp in self.DC.rateParams.keys():
-	 for rk in range(len(self.DC.rateParams[rp])):
-	  type = self.DC.rateParams[rp][rk][0][-1]
-	  if type!=1: continue
-	  argu,arge,argv = self.DC.rateParams[rp][rk][0][0],self.DC.rateParams[rp][rk][0][1],self.DC.rateParams[rp][rk][0][2]
-	  if self.out.arg(argu): continue
-	  self.doExp(argu,arge,argv)
+        for rp in self.DC.rateParams.keys():
+         for rk in range(len(self.DC.rateParams[rp])):
+          type = self.DC.rateParams[rp][rk][0][-1]
+          if type!=1: continue
+          argu,arge,argv = self.DC.rateParams[rp][rk][0][0],self.DC.rateParams[rp][rk][0][1],self.DC.rateParams[rp][rk][0][2]
+          if self.out.arg(argu): continue
+          self.doExp(argu,arge,argv)
 
 
     def doObservables(self):
         """create pdf_bin<X> and pdf_bin<X>_bonly for each bin"""
-        raise RuntimeError, "Not implemented in ModelBuilder"
+        raise RuntimeError("Not implemented in ModelBuilder")
     def doNuisances(self):
         if len(self.DC.systs) == 0: return
         self.doComment(" ----- nuisances -----")
@@ -236,13 +238,13 @@ class ModelBuilder(ModelBuilderBase):
                     is_func_scaled = True
                     func_scaler = pf
                     if self.options.verbose > 1:
-                        print 'Rescaling %s constraint as %s' % (n, pf)
+                        print('Rescaling %s constraint as %s' % (n, pf))
             for pn,pf in self.options.nuisanceGroupFunctions:
                 if pn in self.DC.groups and n in self.DC.groups[pn]:
                     is_func_scaled = True
                     func_scaler = pf
                     if self.options.verbose > 1:
-                        print 'Rescaling %s constraint (in group %s) as %s' % (n, pn, pf)
+                        print('Rescaling %s constraint (in group %s) as %s' % (n, pn, pf))
             if pdf == "lnN" or (pdf.startswith("shape") and pdf != 'shapeU'):
                 r = "-4,4" if pdf == "shape" else "-7,7"
                 sig = 1.0;
@@ -253,7 +255,7 @@ class ModelBuilder(ModelBuilderBase):
                 sig = '%g' % sig
                 if is_func_scaled:
                     sig = func_scaler
-		r_exp = "" if self.out.var(n) else "[%s]"%r # Specify range to invoke factory to produce a RooRealVar only if it doesn't already exist
+                r_exp = "" if self.out.var(n) else "[%s]"%r # Specify range to invoke factory to produce a RooRealVar only if it doesn't already exist
                 if self.options.noOptimizePdf or is_func_scaled:
                       self.doObj("%s_Pdf" % n, "Gaussian", "%s%s, %s_In[0,%s], %s" % (n,r_exp,n,r,sig),True); # Use existing constraint since it could be a param
                       if is_func_scaled:
@@ -274,9 +276,9 @@ class ModelBuilder(ModelBuilderBase):
                   for v in c.values():     # list effects in each channel 
                     if v != 0:
                         if val != 0 and v != val: 
-                            raise RuntimeError, "Error: line %s contains two different uncertainties %g, %g, which is not supported for gmM" % (n,v,val)
+                            raise RuntimeError("Error: line %s contains two different uncertainties %g, %g, which is not supported for gmM" % (n,v,val))
                         val = v;
-                if val == 0: raise RuntimeError, "Error: line %s contains all zeroes"
+                if val == 0: raise RuntimeError("Error: line %s contains all zeroes")
                 theta = val*val; kappa = 1/theta
                 self.doObj("%s_Pdf" % n, "Gamma", "%s[1,%f,%f], %s_In[%g,%g,%g], %s_scaling[%g], 0" % (n, max(0.01,1-5*val), 1+5*val, n, kappa, 1, 2*kappa+4, n, theta))
                 globalobs.append("%s_In" % n)
@@ -287,22 +289,22 @@ class ModelBuilder(ModelBuilderBase):
                     self.doObj("%s_Pdf" % n, "Poisson", "%s_In[%d,0,%d], %s[0,%d], 1" % (n,args[0],2*args[0]+5,n,2*args[0]+5))
                 else:
                     # new version, that creates a poisson with a narrower range (but still +/- 7 sigmas)
-                    #print "Searching for bounds for",n,"poisson with obs",args[0]
+                    #print("Searching for bounds for",n,"poisson with obs",args[0])
                     minExp = args[0]+1 if args[0] > 0 else 0;
                     while (ROOT.TMath.Poisson(args[0], minExp) > 1e-12) and minExp > 0: 
-                        #print "Poisson(%d, minExp = %f) = %g > 1e-12" % (args[0], minExp, ROOT.TMath.Poisson(args[0], minExp))
+                        #print("Poisson(%d, minExp = %f) = %g > 1e-12" % (args[0], minExp, ROOT.TMath.Poisson(args[0], minExp)))
                         minExp *= 0.8;
                     maxExp = args[0]+1;
                     while (ROOT.TMath.Poisson(args[0], maxExp) > 1e-12): 
-                        #print "Poisson(%d, maxExp = %f) = %g > 1e-12" % (args[0], maxExp, ROOT.TMath.Poisson(args[0], maxExp))
+                        #print("Poisson(%d, maxExp = %f) = %g > 1e-12" % (args[0], maxExp, ROOT.TMath.Poisson(args[0], maxExp)))
                         maxExp *= 1.2;
                     minObs = args[0];
                     while minObs > 0 and (ROOT.TMath.Poisson(minObs, args[0]+1) > 1e-12): 
-                        #print "Poisson(minObs = %d, %f) = %g > 1e-12" % (minObs, args[0]+1, ROOT.TMath.Poisson(minObs, args[0]+1))
+                        #print("Poisson(minObs = %d, %f) = %g > 1e-12" % (minObs, args[0]+1, ROOT.TMath.Poisson(minObs, args[0]+1)))
                         minObs -= (sqrt(args[0]) if args[0] > 10 else 1);
                     maxObs = args[0]+2;
                     while (ROOT.TMath.Poisson(maxObs, args[0]+1) > 1e-12): 
-                        #print "Poisson(maxObs = %d, %f) = %g > 1e-12" % (maxObs, args[0]+1, ROOT.TMath.Poisson(maxObs, args[0]+1))
+                        #print("Poisson(maxObs = %d, %f) = %g > 1e-12" % (maxObs, args[0]+1, ROOT.TMath.Poisson(maxObs, args[0]+1)))
                         maxObs += (sqrt(args[0]) if args[0] > 10 else 2);
                     self.doObj("%s_Pdf" % n, "Poisson", "%s_In[%d,%f,%f], %s[%f,%f,%f], 1" % (n,args[0],minObs,maxObs,n,args[0]+1,minExp,maxExp))
                 globalobs.append("%s_In" % n)
@@ -342,14 +344,14 @@ class ModelBuilder(ModelBuilderBase):
                 mean = float(args[0])
                 if "/" in args[1]: 
                     sigmaL,sigmaR = args[1].split("/")
-                    if sigmaL[0] != "-" or sigmaR[0] != "+": raise RuntimeError, "Asymmetric parameter uncertainties should be entered as -x/+y"
+                    if sigmaL[0] != "-" or sigmaR[0] != "+": raise RuntimeError("Asymmetric parameter uncertainties should be entered as -x/+y")
                     sigmaL = sigmaL[1:]; sigmaR = sigmaR[1:]
                     if len(args) == 3: # mean, sigma, range
                         if self.out.var(n):
                           bounds = [float(x) for x in args[2][1:-1].split(",")]
                           self.out.var(n).setConstant(False)
                           if (self.out.var(n).getMin() != bounds[0] or self.out.var(n).getMax() != bounds[1]):
-                            print "Resetting range for %s to be [%s,%s] from param statement (was [%s,%s])" % (n, bounds[0], bounds[1], self.out.var(n).getMin(), self.out.var(n).getMax())
+                            print("Resetting range for %s to be [%s,%s] from param statement (was [%s,%s])" % (n, bounds[0], bounds[1], self.out.var(n).getMin(), self.out.var(n).getMax()))
                           self.out.var(n).setRange(bounds[0],bounds[1])
                         else:
                           self.doVar("%s%s" % (n,args[2]))
@@ -380,7 +382,7 @@ class ModelBuilder(ModelBuilderBase):
                           bounds = [float(x) for x in args[2][1:-1].split(",")]
                           self.out.var(n).setConstant(False)
                           if (self.out.var(n).getMin() != bounds[0] or self.out.var(n).getMax() != bounds[1]):
-                            print "Resetting range for %s to be [%s,%s] from param statement (was [%s,%s])" % (n, bounds[0], bounds[1], self.out.var(n).getMin(), self.out.var(n).getMax())
+                            print("Resetting range for %s to be [%s,%s] from param statement (was [%s,%s])" % (n, bounds[0], bounds[1], self.out.var(n).getMin(), self.out.var(n).getMax()))
                             self.out.var(n).setRange(bounds[0],bounds[1])
                         else:
                           self.doVar("%s%s" % (n,args[2]))
@@ -405,9 +407,9 @@ class ModelBuilder(ModelBuilderBase):
                         self.out.var(n).setRange(self.out.function('%s_BoundLo' % n), self.out.function('%s_BoundHi' % n))
                 globalobs.append("%s_In" % n)
                 #if self.options.optimizeBoundNuisances: self.out.var(n).setAttribute("optimizeBounds")
-	    elif pdf == "extArg" : continue  
+            elif pdf == "extArg" : continue  
 
-            else: raise RuntimeError, "Unsupported pdf %s" % pdf
+            else: raise RuntimeError("Unsupported pdf %s" % pdf)
             if nofloat: 
               self.out.var(n).setAttribute("globalConstrained",True)
             #self.out.var(n).Print('V')
@@ -430,7 +432,7 @@ class ModelBuilder(ModelBuilderBase):
             self.doSet("nuisances", ",".join(["%s"    % n for (n,nf,p,a,e) in self.DC.systs]))
             self.doObj("nuisancePdf", "PROD", ",".join(["%s_Pdf" % n for (n,nf,p,a,e) in self.DC.systs]))
             self.doSet("globalObservables", ",".join(globalobs))
-	
+        
     def doNuisancesGroups(self):
         # Prepare a dictionary of which group a certain nuisance belongs to
         groupsFor = {}
@@ -438,28 +440,28 @@ class ModelBuilder(ModelBuilderBase):
         for groupName,nuisanceNames in self.DC.groups.iteritems():
             for nuisanceName in nuisanceNames:
                 if nuisanceName not in existingNuisanceNames:
-                    raise RuntimeError, 'Nuisance group "%(groupName)s" refers to nuisance "%(nuisanceName)s" but it does not exist. Perhaps you misspelled it.' % locals()
+                    raise RuntimeError('Nuisance group "%(groupName)s" refers to nuisance "%(nuisanceName)s" but it does not exist. Perhaps you misspelled it.' % locals())
                 if nuisanceName in groupsFor:
                     groupsFor[nuisanceName].append(groupName)
                 else:
                     groupsFor[nuisanceName] = [ groupName ]
 
-        #print self.DC.groups
-        #print groupsFor
+        #print(self.DC.groups)
+        #print(groupsFor)
         for n in existingNuisanceNames:
             # set an attribute related to the group(s) this nuisance belongs to
             if n in groupsFor:
                 groupNames = groupsFor[n]
                 if self.options.verbose > 1:
-                    print 'Nuisance "%(n)s" is assigned to the following nuisance groups: %(groupNames)s' % locals()
+                    print('Nuisance "%(n)s" is assigned to the following nuisance groups: %(groupNames)s' % locals())
                 for groupName in groupNames:
                     self.out.var(n).setAttribute('group_'+groupName,True)
 
         for groupName,nuisanceNames in self.DC.groups.iteritems():
-	    nuisanceargset = ROOT.RooArgSet()
+            nuisanceargset = ROOT.RooArgSet()
             for nuisanceName in nuisanceNames:
-		nuisanceargset.add(self.out.var(nuisanceName))
-	    self.out.defineSet("group_%s"%groupName,nuisanceargset)
+                nuisanceargset.add(self.out.var(nuisanceName))
+            self.out.defineSet("group_%s"%groupName,nuisanceargset)
 
 
     def doExpectedEvents(self):
@@ -486,19 +488,19 @@ class ModelBuilder(ModelBuilderBase):
                 elif type(scale) == str: 
                     factors.append(scale)
                 else:
-                    raise RuntimeError, "Physics model returned something which is neither a name, nor 0, nor 1."
+                    raise RuntimeError("Physics model returned something which is neither a name, nor 0, nor 1.")
 
-		# look for rate param for this bin 
-		if "%sAND%s"%(b,p) in self.DC.rateParams.keys():
-		  for rk in range(len(self.DC.rateParams["%sAND%s"%(b,p)])):
-		    argu = self.DC.rateParams["%sAND%s"%(b,p)][rk][0][0]
-		    if self.out.arg(argu): factors.append(argu)
-		    else: raise RuntimeError, "No rate parameter found %s, are you sure you defined it correctly in the datacard?"%(argu)
+                # look for rate param for this bin 
+                if "%sAND%s"%(b,p) in self.DC.rateParams.keys():
+                  for rk in range(len(self.DC.rateParams["%sAND%s"%(b,p)])):
+                    argu = self.DC.rateParams["%sAND%s"%(b,p)][rk][0][0]
+                    if self.out.arg(argu): factors.append(argu)
+                    else: raise RuntimeError("No rate parameter found %s, are you sure you defined it correctly in the datacard?"%(argu))
 
                 for (n,nofloat,pdf,args,errline) in self.DC.systs:
                     if pdf == "param":continue
                     if pdf == "rateParam":continue
-                    if not errline[b].has_key(p): continue
+                    if not p in errline[b]: continue
                     if errline[b][p] == 0.0: continue
                     if pdf.startswith("shape") and pdf.endswith("?"): # might be a lnN in disguise
                         if not self.isShapeSystematic(b,p,n): pdf = "lnN"
@@ -519,36 +521,36 @@ class ModelBuilder(ModelBuilderBase):
                     elif pdf == "gmN":
                         factors.append(n)
                         if abs(errline[b][p] * args[0] - self.DC.exp[b][p]) > max(0.05 * max(self.DC.exp[b][p],1), errline[b][p]):
-                            raise RuntimeError, "Values of N = %d, alpha = %g don't match with expected rate %g for systematics %s " % (
-                                                    args[0], errline[b][p], self.DC.exp[b][p], n)
+                            raise RuntimeError("Values of N = %d, alpha = %g don't match with expected rate %g for systematics %s " % (
+                                                    args[0], errline[b][p], self.DC.exp[b][p], n))
                         if gamma != None:
-                            raise RuntimeError, "More than one gmN uncertainty for the same bin and process (second one is %s)" % n
+                            raise RuntimeError("More than one gmN uncertainty for the same bin and process (second one is %s)" % n)
                         gamma = n; nominal = errline[b][p]; 
-                    else: raise RuntimeError, "Unsupported pdf %s" % pdf
+                    else: raise RuntimeError("Unsupported pdf %s" % pdf)
                 # optimize constants
                 if len(factors) + len(logNorms) + len(alogNorms) == 0:
                     self.doVar("n_exp_bin%s_proc_%s[%g]" % (b, p, self.DC.exp[b][p]))
                 else:
-                    #print "Process %s of bin %s depends on:\n\tlog-normals: %s\n\tasymm log-normals: %s\n\tother factors: %s\n" % (p,b,logNorms, alogNorms, factors)
+                    #print("Process %s of bin %s depends on:\n\tlog-normals: %s\n\tasymm log-normals: %s\n\tother factors: %s\n" % (p,b,logNorms, alogNorms, factors))
                     procNorm = ROOT.ProcessNormalization("n_exp_bin%s_proc_%s" % (b,p), "", nominal)
                     for kappa, thetaName in logNorms: procNorm.addLogNormal(kappa, self.out.function(thetaName))
                     for kappaLo, kappaHi, thetaName in alogNorms: procNorm.addAsymmLogNormal(kappaLo, kappaHi, self.out.function(thetaName))
                     for factorName in factors:
-		    	if self.out.function(factorName): procNorm.addOtherFactor(self.out.function(factorName))
-			else: procNorm.addOtherFactor(self.out.var(factorName))
+                        if self.out.function(factorName): procNorm.addOtherFactor(self.out.function(factorName))
+                        else: procNorm.addOtherFactor(self.out.var(factorName))
                     self.out._import(procNorm)
     def doIndividualModels(self):
         """create pdf_bin<X> and pdf_bin<X>_bonly for each bin"""
-        raise RuntimeError, "Not implemented in ModelBuilder"
+        raise RuntimeError("Not implemented in ModelBuilder")
     def doCombination(self):
         """create model_s and model_b pdfs"""
-        raise RuntimeError, "Not implemented in ModelBuilder"
+        raise RuntimeError("Not implemented in ModelBuilder")
     def doModelConfigs(self):
         if not self.options.bin: raise RuntimeException
         if self.options.out == None: raise RuntimeException
         for nuis,warn in self.DC.flatParamNuisances.iteritems():
             if self.out.var(nuis): self.out.var(nuis).setAttribute("flatParam")
-            elif warn: stderr.write("Missing variable %s declared as flatParam, will create one!\n" % nuis)	
+            elif warn: stderr.write("Missing variable %s declared as flatParam, will create one!\n" % nuis)     
         mc_s = ROOT.RooStats.ModelConfig("ModelConfig",       self.out)
         mc_b = ROOT.RooStats.ModelConfig("ModelConfig_bonly", self.out)
         for (l,mc) in [ ('s',mc_s), ('b',mc_b) ]:
@@ -564,11 +566,11 @@ class ModelBuilder(ModelBuilderBase):
             if self.options.verbose > 2: mc.Print("V")
             self.out._import(mc, mc.GetName())
             if self.options.noBOnly: break
-	discparams = ROOT.RooArgSet("discreteParams")
-	for cpar in self.discrete_param_set:
-		roocpar =  self.out.cat(cpar)
-		discparams.add(self.out.cat(cpar))
-	self.out._import(discparams,discparams.GetName())
+        discparams = ROOT.RooArgSet("discreteParams")
+        for cpar in self.discrete_param_set:
+                roocpar =  self.out.cat(cpar)
+                discparams.add(self.out.cat(cpar))
+        self.out._import(discparams,discparams.GetName())
         self.out.writeToFile(self.options.out)
     def isShapeSystematic(self,channel,process,syst):
         return False
@@ -578,7 +580,7 @@ class CountingModelBuilder(ModelBuilder):
     def __init__(self,datacard,options):
         ModelBuilder.__init__(self,datacard,options)
         if datacard.hasShapes: 
-            raise RuntimeError, "You're using a CountingModelBuilder for a model that has shapes"
+            raise RuntimeError("You're using a CountingModelBuilder for a model that has shapes")
     def doObservables(self):
         if len(self.DC.obs):
             self.doComment(" ----- observables (already set to observed values) -----")

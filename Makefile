@@ -102,6 +102,7 @@ dict: dirs $(SRC_DIR)/$(DICTNAME).cc
 $(SRC_DIR)/$(DICTNAME).cc : $(SRC_DIR)/CombinedLimit_LinkDef.h 
 # 	@echo "\n*** Generating dictionaries ..."
 	rootcint -f $(SRC_DIR)/$(DICTNAME).cc -c -p -I$(INC_DIR) -I$(SRC_DIR) -I$(ROOTINC) -I$(shell pwd)/../.. $(DICTHDRS) $(SRC_DIR)/CombinedLimit_LinkDef.h
+	cp $(SRC_DIR)/$(DICTNAME)_rdict.pcm $(LIB_DIR)/$(DICTNAME)_rdict.pcm
 	-mv $(SRC_DIR)/$(DICTNAME).h $(INC_DIR)/$(DICTNAME).h
 $(SRC_DIR)/CombinedLimit_LinkDef.h: $(SRC_DIR)/classes.h $(SRC_DIR)/classes_def.xml
 	./rebuild_linkdef.py
@@ -128,7 +129,7 @@ $(OBJ_DIR)/$(DICTNAME).o: $(SRC_DIR)/$(DICTNAME).cc
 lib: dirs ${LIB_DIR}/$(SONAME)
 ${LIB_DIR}/$(SONAME):$(addprefix $(OBJ_DIR)/,$(OBJS)) 
 # 		@echo "\n*** Building $(SONAME) library:"
-		$(LD) $(LDFLAGS) $(BOOST_INC) $(addprefix $(OBJ_DIR)/,$(OBJS))  $(SOFLAGS) -o $@ $(LIBS)
+		$(LD) $(LDFLAGS) $(BOOST_INC) $(addprefix $(OBJ_DIR)/,$(OBJS))  $(SOFLAGS) -o $(shell pwd)/$@ $(LIBS)
 
 #---------------------------------------
 
